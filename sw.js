@@ -1,13 +1,13 @@
 // Service worker: cache-first app shell, network-first data.json, and web push display.
 // Bump VERSION whenever a shell file changes so installed apps pick up the update.
-const VERSION = 'ke-v10';
+const VERSION = 'ke-v12';
 const SHELL = [
   './', 'index.html', 'styles.css', 'manifest.json',
   'js/app.js', 'js/config.js', 'js/dom.js', 'js/format.js', 'js/derive.js',
   'js/api.js', 'js/push.js', 'js/state.js', 'js/nav.js',
   'js/pages/lineup.js', 'js/pages/rate.js', 'js/pages/pick.js', 'js/pages/alerts.js', 'js/pages/settings.js',
   'icons/icon-192.png', 'icons/icon-512.png', 'icons/icon-maskable-512.png', 'icons/apple-touch-icon-180.png',
-  'assets/kyle-cartoon.webp',
+  'assets/kyle-logo@2x.webp', 'assets/kyle-logo@3x.webp',
 ];
 
 self.addEventListener('install', (e) => {
