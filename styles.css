@@ -48,6 +48,25 @@ code { background: var(--bg-2); padding: 1px 6px; border-radius: 6px; font-size:
 .brandmark { display: flex; align-items: center; gap: 8px; font: 800 22px/1 var(--display); letter-spacing: .04em; }
 .brandmark b { color: var(--volt); font-weight: 800; }
 .brandmark svg { width: 22px; height: 22px; fill: var(--volt); }
+
+/* Header logo: Kyle on a dark tile with a lime ring; head and sneakers break out of the tile */
+.logo { --s: 44px; position: relative; width: var(--s); height: calc(var(--s) * 1.06); flex: 0 0 auto; margin: -4px 2px -4px 0; }
+.logo-tile {
+  position: absolute; left: 8%; right: 8%; top: 17%; bottom: 9%; border-radius: 22%;
+  background: linear-gradient(#1e2614, #0b0d10); border: 1.5px solid var(--volt);
+  animation: logo-glow 2.6s ease-in-out infinite;
+}
+.logo img {
+  position: absolute; left: 50%; top: 0; height: 96%; width: auto; transform: translateX(-50%);
+  transform-origin: 50% 95%; animation: logo-bounce 2.6s ease-in-out infinite;
+  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
+}
+@keyframes logo-glow { 0%, 100% { box-shadow: 0 0 2px rgba(212,255,58,.35); } 50% { box-shadow: 0 0 7px rgba(212,255,58,.8); } }
+@keyframes logo-bounce {
+  0%, 100% { transform: translateX(-50%) translateY(0); }
+  40% { transform: translateX(-50%) translateY(-3.5%) scale(1.015); }
+  55% { transform: translateX(-50%) translateY(0) scale(1, .985); }
+}
 .topbar-stat { font: 600 14px/1 var(--display); letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
 
 main { max-width: 680px; margin: 0 auto; padding: 0 16px; }
