@@ -1,17 +1,21 @@
-// First-open intro ("Power-up", about 2.7 s): the header logo grows to the middle of the screen, a can slams
-// down beside Kyle, the tab pops, he jumps, bolts flash, CAFFIEND slams in, then it all shrinks back into
+// First-open intro ("Power-up", about 2.9 s): the header logo grows to the middle of the screen, Kyle snaps his
+// fingers (wrist flick + spark flash over the original hand art), a can slams down beside him as he points, the tab pops, he jumps, bolts flash, CAFFIEND slams in, then it all shrinks back into
 // the header logo. One requestAnimationFrame timeline over SVG, no libraries. Styles live in styles.css (.intro).
 //
 // playIntro()              plays once per phone (flag in localStorage), skipped for Reduce Motion.
 // playIntro({ force: true }) replays it (Settings > Replay intro).
 
 const NS = 'http://www.w3.org/2000/svg';
-const ART = 'assets/kyle-intro.webp';
+const ART = 'assets/kyle-intro-body.webp';          // Kyle with his right hand cut out (patched shirt)
+const HAND = 'assets/kyle-intro-hand.webp';         // that hand, animated on its own for the snap
 const VB_W = 492, VB_H = 918;                              // artwork coordinates
 const LOGO = { w: 44, h: 46.64, imgW: 24, imgH: 45 };     // header .logo box in CSS px (styles.css)
 const SEEN_KEY = 'ke.introSeen';
 
-const T = { grow: 450, burst: 1250, flyStart: 2150, flyEnd: 2600, fadeStart: 2250, end: 2700 };
+const T = { grow: 420, set: 300, snap: 580, point: 720, land: 960, burst: 1490, flyStart: 2390, flyEnd: 2840, fadeStart: 2490, end: 2940 };
+const D = T.land - 720;   // everything after the landing runs this much later than the original Power-up
+const WRIST = [359, 473]; // where the hand meets the forearm, in artwork coordinates
+
 
 const clamp01 = (x) => Math.max(0, Math.min(1, x));
 const ease = {
@@ -74,12 +78,33 @@ function build() {
   });
   const shadow = el('ellipse', { cx: 600, cy: 905, rx: 60, ry: 12, fill: '#000', opacity: 0 }, fx);
   el('image', { href: ART, x: 0, y: 0, width: VB_W, height: VB_H }, fig);
+  // his right hand (original artwork, never redrawn). Two faint copies trail it as a motion echo on the flick.
+  const echoes = [0.35, 0.18].map((o) => {
+    const g = el('g', { opacity: 0 }, fig);
+    el('image', { href: HAND, x: 267, y: 315, width: 107, height: 198 }, g);
+    return { g, o };
+  });
+  const hand = el('g', {}, fig);
+  el('image', { href: HAND, x: 267, y: 315, width: 107, height: 198 }, hand);
+  // snap flash over the fingertips: a white/lime star plus spark lines
+  const snapFx = el('g', { opacity: 0 }, front);
+  const star = (r1, r2, n) => Array.from({ length: n * 2 }, (_, i) => {
+    const r = i % 2 ? r2 : r1, a = (Math.PI * i) / n - Math.PI / 2;
+    return `${(r * Math.cos(a)).toFixed(1)},${(r * Math.sin(a)).toFixed(1)}`;
+  }).join(' ');
+  el('polygon', { points: star(62, 26, 8), fill: '#d4ff3a', stroke: '#0b0d10', 'stroke-width': 5, 'stroke-linejoin': 'round' }, snapFx);
+  el('polygon', { points: star(34, 15, 8), fill: '#fff' }, snapFx);
+  [-80, -45, -10, 25].forEach((a) => el('line', { x1: 0, y1: -74, x2: 0, y2: -108, stroke: '#d4ff3a', 'stroke-width': 9,
+    'stroke-linecap': 'round', transform: `rotate(${a})` }, snapFx));
+  const snapWord = el('text', { x: 360, y: 270, fill: '#d4ff3a', stroke: '#0b0d10', 'stroke-width': 7, 'paint-order': 'stroke',
+    'font-family': 'Barlow Condensed, Arial Narrow, sans-serif', 'font-weight': 800, 'font-size': 58, opacity: 0 }, front);
+  snapWord.textContent = 'SNAP!';
   const can = el('g', {}, front);
   drawCan(can, 96, 260);
   const spray = Array.from({ length: 12 }, () => el('circle', { r: 10, fill: '#d4ff3a', opacity: 0 }, front));
 
   return {
-    root, stage, svg, fig, can, shadow, spray, rings, bolts,
+    root, stage, svg, fig, can, shadow, spray, rings, bolts, hand, echoes, snapFx, snapWord,
     bg: root.querySelector('.intro-bg'), tile: root.querySelector('.intro-tile'),
     word: root.querySelector('.intro-word'), skip: root.querySelector('.intro-skip'),
   };
@@ -125,26 +150,45 @@ export function createIntro() {
     });
 
     // can slams down beside him
-    const fallK = ease.in(clamp01((t - 300) / 420));
-    const land = pulse(t, 720, 220);
+    const fallK = ease.in(clamp01((t - (T.land - 420)) / 420));
+    const land = pulse(t, T.land, 220);
     const canOut = 1 - clamp01((t - T.flyStart) / 200);
     p.can.setAttribute('transform', `translate(600 ${775 - 1100 * (1 - fallK) + 18 * land}) scale(${1 + 0.12 * land} ${1 - 0.12 * land})`);
-    p.can.setAttribute('opacity', canOut);
-    p.shadow.setAttribute('opacity', 0.45 * clamp01((t - 300) / 420) * canOut);
+    p.can.setAttribute('opacity', t < T.snap ? 0 : canOut);   // the snap summons the can
+    p.shadow.setAttribute('opacity', 0.45 * clamp01((t - (T.land - 420)) / 420) * canOut);
     // tab pops: lime spray
     p.spray.forEach((c, i) => {
-      const q = clamp01((t - 820 - (i % 4) * 30) / 520), ang = ((-150 + (i * 120) / 11) * Math.PI) / 180, v = 260 + (i % 3) * 70;
+      const q = clamp01((t - 820 - D - (i % 4) * 30) / 520), ang = ((-150 + (i * 120) / 11) * Math.PI) / 180, v = 260 + (i % 3) * 70;
       c.setAttribute('cx', 600 + Math.cos(ang) * v * q);
       c.setAttribute('cy', 645 + Math.sin(ang) * v * q + 420 * q * q);
       c.setAttribute('r', 12 - 6 * q);
       c.setAttribute('opacity', q > 0 && q < 1 ? 1 - q * 0.7 : 0);
     });
     // Kyle: crouch, jump with stretch, land squash
-    const crouch = pulse(t, 760, 220), air = pulse(t, 900, 420), landK = pulse(t, 1300, 200);
+    const crouch = pulse(t, 760 + D, 220), air = pulse(t, 900 + D, 420), landK = pulse(t, 1300 + D, 200);
     const sy = 1 - 0.08 * crouch + 0.07 * air - 0.08 * landK, sx = 1 + 0.06 * crouch - 0.04 * air + 0.06 * landK;
     p.fig.setAttribute('transform', `translate(${246 * (1 - sx)} ${-230 * air + VB_H * (1 - sy)}) scale(${sx} ${sy})`);
+    // hand: point -> snap set (cocked) -> SNAP -> back to the point as the can drops, jab as it lands
+    // hand: cock the wrist back (tension), flick forward on the SNAP, settle into the point as the can drops
+    const handRot = (u) => (u < T.set ? 0 : u < T.snap ? 10 * ease.out(clamp01((u - T.set) / 220))
+      : u < T.point ? 10 - 22 * ease.out(clamp01((u - T.snap) / 70)) : -12 * (1 - ease.back(clamp01((u - T.point) / 260))));
+    const squeeze = t >= T.set && t < T.snap ? 1 - 0.05 * ease.out(clamp01((t - T.set) / 220)) : 1;
+    const jab = 1 + 0.08 * pulse(t, T.land - 40, 200);
+    const handT = (r) => `rotate(${r} ${WRIST[0]} ${WRIST[1]}) translate(${WRIST[0]} ${WRIST[1]}) scale(${jab * squeeze} ${jab}) translate(${-WRIST[0]} ${-WRIST[1]})`;
+    p.hand.setAttribute('transform', handT(handRot(t)));
+    const flick = t >= T.snap && t < T.snap + 160;
+    p.echoes.forEach((e, i) => {
+      e.g.setAttribute('opacity', flick ? e.o * (1 - (t - T.snap) / 160) : 0);
+      e.g.setAttribute('transform', handT(handRot(t - 35 * (i + 1))));
+    });
+    const sp = pulse(t, T.snap, 240);
+    p.snapFx.setAttribute('opacity', Math.min(1, sp * 2.2));
+    p.snapFx.setAttribute('transform', `translate(314 352) rotate(${40 * clamp01((t - T.snap) / 240)}) scale(${0.3 + 0.8 * ease.out(clamp01((t - T.snap) / 140))})`);
+    p.snapWord.setAttribute('opacity', Math.min(1, pulse(t, T.snap, 380) * 2));
+    p.snapWord.setAttribute('transform', `rotate(-10 400 250) translate(0 ${-14 * clamp01((t - T.snap) / 380)})`);
+
     // wordmark slam
-    const w = clamp01((t - 1300) / 260);
+    const w = clamp01((t - 1300 - D) / 260);
     p.word.style.opacity = t < T.flyStart ? w : 1 - clamp01((t - T.flyStart) / 200);
     p.word.style.transform = `scale(${1.8 - 0.8 * ease.back(w)})`;
   }
@@ -196,6 +240,7 @@ function preload() {
     const img = new Image();
     img.onload = img.onerror = () => res();
     img.src = ART;
+    new Image().src = HAND;
     setTimeout(res, 1500);   // never hold the app up for a slow image
   });
 }
