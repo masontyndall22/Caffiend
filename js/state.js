@@ -7,6 +7,7 @@ const PIN_KEY = 'ke.pin';
 const NAME_KEY = 'ke.name';                // display name used for likes
 const CACHE_KEY = 'ke.cache';             // last ratings from the API, for offline starts
 const PREVIEW_KEY = 'ke.previewRatings';  // preview mode only (no API_BASE)
+const SEEN_KEY = 'ke.seen';               // ratings this phone has viewed in the Lineup (for the NEW badge)
 
 const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
@@ -26,6 +27,33 @@ let state = {
 };
 const subs = new Set();
 
+// ---------- "New" ratings (per phone) ----------
+// A rating is new until this phone has had it on screen in the Lineup. The first time the app runs with this
+// feature, everything already rated counts as seen, so only ratings added after that light up.
+const ratingId = (r) => (r.id != null ? `i${r.id}` : `k${key(r.brand, r.flavor)}`);
+let seen = (() => { const a = readJson(SEEN_KEY); return Array.isArray(a) ? new Set(a) : null; })();
+const saveSeen = () => store(SEEN_KEY, JSON.stringify([...seen]));
+export const isNew = (r) => Boolean(seen) && !seen.has(ratingId(r));
+export const newCount = (ratings = state.ratings) => ratings.filter(isNew).length;
+// rerender: true also redraws the Lineup (used after this phone's own save, so it never shows as new)
+export function markSeen(list, { rerender = false } = {}) {
+  const fresh = list.filter(isNew);
+  if (!fresh.length) return;
+  fresh.forEach((r) => seen.add(ratingId(r)));
+  saveSeen();
+  set(rerender ? { seenAt: Date.now(), ratings: state.ratings } : { seenAt: Date.now() });
+}
+function baselineSeen(ratings) {
+  if (seen) {
+    // forget ids that no longer exist so the list doesn't grow forever
+    const live = new Set(ratings.map(ratingId));
+    if ([...seen].some((id) => !live.has(id)) && ratings.length) { seen = new Set([...seen].filter((id) => live.has(id))); saveSeen(); }
+    return;
+  }
+  seen = new Set(ratings.map(ratingId));
+  saveSeen();
+}
+
 export const get = () => state;
 export function subscribe(fn) { subs.add(fn); return () => subs.delete(fn); }
 function set(patch) {
@@ -42,6 +70,7 @@ const localDate = () => {
 
 function applyRatings(snap) {
   const ratings = Array.isArray(snap?.ratings) ? snap.ratings : [];
+  if (ratings.length) baselineSeen(ratings);
   set({ ratings, updated: snap?.updated || null, loading: false, error: null });
   if (api.hasApi()) store(CACHE_KEY, JSON.stringify({ ratings, updated: snap?.updated || null }));
 }
@@ -123,12 +152,14 @@ export async function saveRating(entry) {
     const ratings = original ? replaceRating(state.ratings, original, { ...full, likes: original.likes || [] }) : [...state.ratings, { ...full, likes: [] }];
     store(PREVIEW_KEY, JSON.stringify(ratings));
     set({ ratings, editing: null });
+    markSeen(ratings.filter((r) => key(r.brand, r.flavor) === key(full.brand, full.flavor)), { rerender: true });
     return { preview: true, edited: Boolean(original) };
   }
   if (!state.pin) throw Object.assign(new Error('Enter the crew PIN first: tap the bell in the top right.'), { needsPin: true });
   const res = await api.saveRating(full, state.pin, original, state.push.endpoint);
   applyRatings(res);
   set({ editing: null });
+  markSeen(state.ratings.filter((r) => key(r.brand, r.flavor) === key(full.brand, full.flavor)), { rerender: true });
   return { preview: false, edited: Boolean(original) };
 }
 
