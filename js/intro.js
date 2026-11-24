@@ -116,13 +116,15 @@ export function createIntro() {
   let S = 1, big = { x: 0, y: 0 }, small = { x: 0, y: 0, s: 1 };
 
   function layout() {
-    const vw = innerWidth, vh = innerHeight;
+    const vw = document.documentElement.clientWidth || innerWidth, vh = innerHeight;
     S = Math.min((vw * 0.7) / LOGO.w, (vh * 0.42) / LOGO.h);
     const W = LOGO.w * S, H = LOGO.h * S, iw = LOGO.imgW * S, ih = LOGO.imgH * S;
     Object.assign(p.stage.style, { width: W + 'px', height: H + 'px' });
     p.stage.style.setProperty('--ring', Math.max(2, S * 0.9) + 'px');
     Object.assign(p.svg.style, { left: (W - iw) / 2 + 'px', top: '0px', width: iw + 'px', height: ih + 'px' });
-    big = { x: (vw - W) / 2 - W * 0.1, y: vh * 0.42 - H / 2 };   // nudged left to leave room for the can
+    // Tile dead centre horizontally; the tile + CAFFIEND wordmark block centred vertically.
+    // (The can lands just right of the tile and still fits on screen.)
+    big = { x: (vw - W) / 2, y: Math.max(8, (vh - (H + 26 + 46)) / 2) };
     p.word.style.top = big.y + H + 26 + 'px';
     const r = document.querySelector('.topbar .logo')?.getBoundingClientRect();
     small = r && r.width ? { x: r.left, y: r.top, s: r.width / W } : { x: 16, y: 12, s: LOGO.w / W };
