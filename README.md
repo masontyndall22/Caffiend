@@ -72,12 +72,16 @@ trying the UI before the backend exists. Notifications are hidden in preview mod
    npx wrangler secret put VAPID_PUBLIC_KEY
    npx wrangler secret put VAPID_PRIVATE_KEY
    ```
-5. **Allowed site.** In `wrangler.toml`, set `ALLOWED_ORIGINS` to your Pages origin, e.g.
-   `"https://<user>.github.io"`. Optionally set `VAPID_SUBJECT` to a `mailto:` address of yours.
+5. **Allowed site.** In `wrangler.toml`, set `ALLOWED_ORIGINS` to your Pages **origin only**, e.g.
+   `"https://<user>.github.io"`. No repo path: `https://<user>.github.io/kyle-energy/` won't match
+   (a trailing slash alone is fine). Optionally set `VAPID_SUBJECT` to a `mailto:` address of yours.
 6. **Deploy.** `npx wrangler deploy` prints the Worker URL.
 7. **Point the app at it.** In `js/config.js` set `API_BASE` to that URL and `VAPID_PUBLIC_KEY` to the
    public key, bump `VERSION` in `sw.js`, and push.
-8. **Turn on alerts on each phone.**
+8. **Enter the PIN on each phone.** Rate tab → scroll to the bottom → *Settings & notifications* →
+   *Crew PIN*. Use the value you gave `CREW_PIN`. It's remembered on that phone. If you try to save
+   without it, the app opens that box for you.
+9. **Turn on alerts on each phone.**
    - iPhone (iOS 16.4+): open the site in Safari, Share → *Add to Home Screen*, open it from the Home
      Screen, then tap the bell or *Turn on*. Web push on iPhone only works from the Home Screen app.
    - Android: open in Chrome, tap the bell or *Turn on* (installing is optional but nicer).

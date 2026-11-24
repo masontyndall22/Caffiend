@@ -8,11 +8,11 @@ const SHELL = [
   'js/pages/lineup.js', 'js/pages/rate.js', 'js/pages/pick.js', 'js/pages/alerts.js',
   'icons/icon.svg', 'icons/icon-192.png', 'icons/icon-512.png',
 ];
-
+ 
 self.addEventListener('install', (e) => {
   e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
 });
-
+ 
 self.addEventListener('activate', (e) => {
   e.waitUntil(
     caches.keys()
@@ -20,11 +20,11 @@ self.addEventListener('activate', (e) => {
       .then(() => self.clients.claim()),
   );
 });
-
+ 
 self.addEventListener('fetch', (e) => {
   const url = new URL(e.request.url);
   if (e.request.method !== 'GET' || url.origin !== location.origin) return; // API, fonts: straight to network
-
+ 
   if (url.pathname.endsWith('/data.json')) {
     e.respondWith(
       fetch(e.request).then((res) => {
@@ -35,14 +35,14 @@ self.addEventListener('fetch', (e) => {
     );
     return;
   }
-
+ 
   e.respondWith(
     caches.match(e.request, { ignoreSearch: true }).then((hit) => hit || fetch(e.request)),
   );
 });
-
+ 
 // ---- Push ----
-
+ 
 self.addEventListener('push', (e) => {
   let msg = {};
   try { msg = e.data ? e.data.json() : {}; } catch { msg = { body: e.data?.text() }; }
@@ -54,7 +54,7 @@ self.addEventListener('push', (e) => {
     data: { url: msg.url || './#lineup' },
   }));
 });
-
+ 
 self.addEventListener('notificationclick', (e) => {
   e.notification.close();
   const target = new URL(e.notification.data?.url || './', self.registration.scope).href;
@@ -65,3 +65,4 @@ self.addEventListener('notificationclick', (e) => {
     return self.clients.openWindow(target);
   })());
 });
+ 
