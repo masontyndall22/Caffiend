@@ -6,6 +6,7 @@ import { initRate } from './pages/rate.js';
 import { initPick } from './pages/pick.js';
 import { initAlerts } from './pages/alerts.js';
 import { initSettings } from './pages/settings.js';
+import { playIntro } from './intro.js';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -18,6 +19,7 @@ initSettings();
 initAlerts();
 initNav();
 load();
+playIntro();   // first open only; skipped for Reduce Motion
 
 // Refresh when the app comes back to the foreground (common on phones).
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible') load(); });

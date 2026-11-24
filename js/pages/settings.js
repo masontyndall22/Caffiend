@@ -1,6 +1,7 @@
 // Settings sheet, opened from the top-right button: display name (for likes), crew PIN, notifications.
 import { $ } from '../dom.js';
 import { get, subscribe, setPin, setName, openSettings, closeSettings } from '../state.js';
+import { playIntro } from '../intro.js';
 
 let lastFocus = null;
 
@@ -39,6 +40,8 @@ export function initSettings() {
   pin.addEventListener('input', () => setPin(pin.value.trim()));
   const name = $('my-name');
   name.addEventListener('change', () => { setName(name.value); name.value = get().name; });
+
+  $('replay-intro').addEventListener('click', () => { closeSettings(); playIntro({ force: true }); });
 
   subscribe((s, patch) => { if ('settingsOpen' in patch) render(s.settingsOpen); });
 }

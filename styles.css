@@ -392,3 +392,24 @@ body:has([data-page="pick"]:not([hidden])) { padding-bottom: calc(var(--tabbar-h
   [data-page="rate"] .edit-banner + .card { margin-top: 0; }
 }
 body:has([data-page="rate"]:not([hidden])) { padding-bottom: calc(var(--tabbar-h) + var(--tab-pad)); }
+
+/* ---- First-open intro (js/intro.js) ---- */
+.intro { position: fixed; inset: 0; z-index: 100; touch-action: none; cursor: pointer; }
+.intro-bg { position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 42%, #1a2310 0%, var(--bg, #0b0d10) 60%); }
+.intro-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.intro-tile {
+  position: absolute; left: 8%; right: 8%; top: 17%; bottom: 9%; border-radius: 22%;
+  background: linear-gradient(#1e2614, #0b0d10); border: var(--ring, 2px) solid var(--volt);
+}
+.intro svg { position: absolute; overflow: visible; }
+.intro-word {
+  position: absolute; left: 0; right: 0; text-align: center; opacity: 0;
+  font: 800 46px/1 var(--display); letter-spacing: .04em; color: var(--text);
+}
+.intro-word b { color: var(--volt); }
+.intro-skip {
+  position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 18px); text-align: center;
+  font: 600 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+}
+.intro-playing .topbar .logo { visibility: hidden; }
+.sheet-replay { justify-self: start; }
