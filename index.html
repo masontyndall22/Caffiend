@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="theme-color" content="#0b0d10">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="Kyle Energy">
+  <title>Kyle Energy</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" href="icons/icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="icons/icon-192.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;800&family=Inter:wght@400;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <header class="topbar">
+    <div class="brandmark">
+      <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg>
+      <span>KYLE<b>ENERGY</b></span>
+    </div>
+    <div class="topbar-right">
+      <div class="topbar-stat" data-el="headline-stat"></div>
+      <button type="button" class="bell" data-el="bell" aria-label="Notifications" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 8a6 6 0 1 1 12 0c0 7 3 9 3 9H3s3-2 3-9"/><path d="M10.3 21a1.94 1.94 0 0 0 3.4 0"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <main>
+    <!-- LINEUP -->
+    <section class="page" data-page="lineup">
+      <div class="page-head">
+        <h1>The Lineup</h1>
+        <p class="sub" data-el="lineup-sub">Loading…</p>
+      </div>
+      <div class="alert-banner" data-el="alert-banner" hidden>
+        <p data-el="alert-banner-text">Get a notification when a new can gets rated.</p>
+        <div class="alert-banner-actions">
+          <button type="button" class="btn-ghost" data-el="alert-banner-on">Turn on</button>
+          <button type="button" class="btn-link" data-el="alert-banner-dismiss">Not now</button>
+        </div>
+      </div>
+      <div class="toolbar">
+        <input type="search" class="search" data-el="search" placeholder="Search brand or flavor" autocomplete="off">
+        <select class="sort" data-el="sort" aria-label="Sort">
+          <option value="score">Top rated</option>
+          <option value="name">A–Z</option>
+          <option value="recent">Newest</option>
+        </select>
+      </div>
+      <div data-el="brand-list" class="brand-list"></div>
+    </section>
+
+    <!-- RATE -->
+    <section class="page" data-page="rate" hidden>
+      <div class="page-head">
+        <h1>Rate a Can</h1>
+        <p class="sub">Log a new flavor. To change one, tap Edit in the Lineup.</p>
+      </div>
+      <div class="edit-banner" data-el="edit-banner" hidden>
+        <span>Editing <b data-el="edit-label"></b></span>
+        <button type="button" class="btn-link" data-el="edit-cancel">Cancel</button>
+      </div>
+      <form class="card form" data-el="rate-form" novalidate>
+        <div class="field">
+          <label for="brand-input"><span>Brand</span></label>
+          <input id="brand-input" data-el="brand" maxlength="40" autocomplete="off" autocapitalize="words" placeholder="Tap one below or type a new brand">
+          <div class="brand-chips" data-el="brand-chips"></div>
+          <p class="hint" data-el="brand-hint"></p>
+        </div>
+        <div class="field">
+          <label for="flavor-input"><span>Flavor</span></label>
+          <input id="flavor-input" data-el="flavor" list="flavor-options" maxlength="60" autocomplete="off" autocapitalize="words" placeholder="e.g. Sour Patch Blue Raspberry">
+          <datalist id="flavor-options" data-el="flavor-options"></datalist>
+          <p class="hint" data-el="flavor-hint"></p>
+        </div>
+
+        <div class="field">
+          <label for="score-input"><span>Rating <em>(tap the number to type it)</em></span></label>
+          <div class="score-dial">
+            <input id="score-input" class="score-big" data-el="score-num" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="7.0" aria-label="Rating, 0.0 to 10.0">
+            <span class="score-max">/ 10</span>
+          </div>
+          <input type="range" data-el="score-range" min="0" max="10" step="0.1" value="7" aria-label="Rating slider">
+          <div class="nudge">
+            <button type="button" data-nudge="-1">−1</button>
+            <button type="button" data-nudge="-0.1">−.1</button>
+            <button type="button" data-nudge="0.1">+.1</button>
+            <button type="button" data-nudge="1">+1</button>
+          </div>
+        </div>
+
+        <label class="field">
+          <span>Notes <em>(optional)</em></span>
+          <input data-el="note" maxlength="140" autocomplete="off" placeholder="Taste, crash, would buy again?">
+        </label>
+
+        <p class="form-msg" data-el="form-msg" role="status"></p>
+        <button class="btn-primary" type="submit" data-el="submit">Lock it in</button>
+      </form>
+
+      <details class="card settings">
+        <summary>Settings &amp; notifications</summary>
+        <label class="field">
+          <span>Crew PIN (needed to save ratings)</span>
+          <input type="password" data-el="pin" inputmode="numeric" autocomplete="off" placeholder="Ask Mason">
+        </label>
+        <div class="alerts">
+          <span class="alerts-title">Notifications</span>
+          <p data-el="push-status">Checking…</p>
+          <div class="alerts-actions">
+            <button type="button" class="btn-ghost" data-el="push-toggle" hidden>Turn on</button>
+            <button type="button" class="btn-link" data-el="push-test" hidden>Send a test</button>
+          </div>
+        </div>
+      </details>
+    </section>
+
+    <!-- PICK -->
+    <section class="page" data-page="pick" hidden>
+      <div class="page-head">
+        <h1>Spin the Fridge</h1>
+        <p class="sub">Can't decide? Let the reel pick your next can.</p>
+      </div>
+      <div class="chips" data-el="pick-filter" role="radiogroup" aria-label="Pick from">
+        <button type="button" class="chip is-on" data-min="0">Anything</button>
+        <button type="button" class="chip" data-min="7">7.0+</button>
+        <button type="button" class="chip" data-min="8.5">Bangers 8.5+</button>
+      </div>
+      <div class="reel-wrap">
+        <div class="reel-window">
+          <div class="reel" data-el="reel"></div>
+        </div>
+        <div class="reel-marker" aria-hidden="true"></div>
+      </div>
+      <button class="btn-primary btn-spin" type="button" data-el="spin">Spin</button>
+      <div class="pick-result" data-el="pick-result" aria-live="polite"></div>
+    </section>
+  </main>
+
+  <nav class="tabbar" data-el="tabbar">
+    <a href="#lineup" data-tab="lineup">
+      <svg viewBox="0 0 24 24"><path d="M4 6h16M4 12h16M4 18h10"/></svg><span>Lineup</span>
+    </a>
+    <a href="#rate" data-tab="rate" class="tab-rate">
+      <svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg><span>Rate</span>
+    </a>
+    <a href="#pick" data-tab="pick">
+      <svg viewBox="0 0 24 24"><path d="M4 4h16v16H4zM9 9h.01M15 15h.01M15 9h.01M9 15h.01M12 12h.01"/></svg><span>Pick</span>
+    </a>
+  </nav>
+
+  <div class="toast" data-el="toast" role="status" hidden></div>
+
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

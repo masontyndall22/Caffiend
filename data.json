@@ -1,0 +1,17 @@
+{
+  "updated": "2026-11-23T20:00:00Z",
+  "sample": true,
+  "ratings": [
+    { "brand": "Celsius", "flavor": "Sparkling Orange", "rating": 7.8, "date": "2026-11-02", "note": "Clean, no crash" },
+    { "brand": "Celsius", "flavor": "Kiwi Guava", "rating": 6.4, "date": "2026-11-09", "note": "" },
+    { "brand": "Celsius", "flavor": "Peach Vibe", "rating": 8.3, "date": "2026-11-18", "note": "Sneaky good" },
+    { "brand": "Ghost", "flavor": "Sour Patch Kids Blue Raspberry", "rating": 9.1, "date": "2026-11-05", "note": "Tastes exactly like the candy" },
+    { "brand": "Ghost", "flavor": "Swedish Fish", "rating": 8.6, "date": "2026-11-20", "note": "" },
+    { "brand": "Monster", "flavor": "Ultra White", "rating": 8.0, "date": "2026-10-28", "note": "The classic" },
+    { "brand": "Monster", "flavor": "Pipeline Punch", "rating": 7.2, "date": "2026-11-12", "note": "" },
+    { "brand": "Monster", "flavor": "Mango Loco", "rating": 6.9, "date": "2026-11-15", "note": "" },
+    { "brand": "Red Bull", "flavor": "Original", "rating": 5.5, "date": "2026-10-30", "note": "Medicine vibes" },
+    { "brand": "Red Bull", "flavor": "Winter Edition", "rating": 7.4, "date": "2026-11-22", "note": "" },
+    { "brand": "Alani Nu", "flavor": "Cosmic Stardust", "rating": 4.2, "date": "2026-11-10", "note": "Too sweet" }
+  ]
+}
