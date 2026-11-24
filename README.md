@@ -1,4 +1,7 @@
-# Kyle Energy
+# Caffiend
+
+*Caffeine + fiend.* Internal names (folder, Worker `kyle-energy-api`, database `kyle-energy`) stay as they
+were so nothing has to be recreated.
 
 A tiny PWA for logging energy drinks: grouped by brand, then flavor, rated 0.0 to 10.0.
 Vanilla HTML/CSS/JS ES modules, no build step. The site is on GitHub Pages; ratings live in a free
