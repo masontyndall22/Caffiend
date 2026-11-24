@@ -19,7 +19,7 @@
 <body>
   <header class="topbar">
     <div class="brandmark">
-      <div class="logo" aria-hidden="true"><div class="logo-tile"></div><img src="assets/kyle-cartoon.webp" alt="" width="46" height="84"></div>
+      <div class="logo" aria-hidden="true"><div class="logo-tile"></div><img src="assets/kyle-logo@3x.webp" srcset="assets/kyle-logo@2x.webp 2x, assets/kyle-logo@3x.webp 3x" alt="" width="24" height="45"></div>
       <span>CAF<b>FIEND</b></span>
     </div>
     <div class="topbar-right">
@@ -79,31 +79,30 @@
           <datalist id="flavor-options" data-el="flavor-options"></datalist>
           <p class="hint" data-el="flavor-hint"></p>
         </div>
-        <div class="field">
-          <label for="caffeine-input"><span>Caffeine <em>(mg per can, optional)</em></span></label>
-          <div class="mg-wrap">
-            <input id="caffeine-input" data-el="caffeine" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="e.g. 200">
-            <span class="mg-unit">mg</span>
+        <div class="rate-row">
+          <div class="field">
+            <label for="caffeine-input"><span>Caffeine</span></label>
+            <div class="mg-wrap">
+              <input id="caffeine-input" data-el="caffeine" inputmode="numeric" maxlength="4" autocomplete="off" placeholder="Optional">
+              <span class="mg-unit">mg</span>
+            </div>
           </div>
-          <p class="hint" data-el="caffeine-hint"></p>
+          <div class="field">
+            <label for="score-input"><span>Rating <em>(tap to type)</em></span></label>
+            <div class="score-dial">
+              <input id="score-input" class="score-big" data-el="score-num" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="7.0" aria-label="Rating, 0.0 to 10.0">
+              <span class="score-max">/ 10</span>
+            </div>
+          </div>
         </div>
-
-        <div class="field">
-          <label for="score-input"><span>Rating <em>(tap the number to type it)</em></span></label>
-          <div class="score-dial">
-            <input id="score-input" class="score-big" data-el="score-num" inputmode="decimal" enterkeyhint="done" autocomplete="off" value="7.0" aria-label="Rating, 0.0 to 10.0">
-            <span class="score-max">/ 10</span>
-          </div>
+        <p class="hint" data-el="caffeine-hint"></p>
+        <div class="score-slide">
+          <button type="button" data-nudge="-0.1" aria-label="Minus 0.1">−.1</button>
           <input type="range" data-el="score-range" min="0" max="10" step="0.1" value="7" aria-label="Rating slider">
-          <div class="nudge">
-            <button type="button" data-nudge="-1">−1</button>
-            <button type="button" data-nudge="-0.1">−.1</button>
-            <button type="button" data-nudge="0.1">+.1</button>
-            <button type="button" data-nudge="1">+1</button>
-          </div>
+          <button type="button" data-nudge="0.1" aria-label="Plus 0.1">+.1</button>
         </div>
 
-        <label class="field">
+        <label class="field notes">
           <span>Notes <em>(optional)</em></span>
           <input data-el="note" maxlength="140" autocomplete="off" placeholder="Taste, crash, would buy again?">
         </label>
@@ -172,6 +171,7 @@
           <button type="button" class="btn-link" data-el="push-test" hidden>Send a test</button>
         </div>
       </div>
+      <button type="button" class="btn-link sheet-replay" data-el="replay-intro">Replay intro</button>
       <button type="button" class="btn-primary sheet-done" data-el="sheet-done">Done</button>
     </section>
   </div>

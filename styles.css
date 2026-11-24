@@ -15,7 +15,11 @@
   --radius: 14px;
   --display: "Barlow Condensed", "Arial Narrow", system-ui, sans-serif;
   --body: Inter, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
-  --tabbar-h: 68px;
+  --tabbar-h: 54px;      /* tab bar content height, without the home-indicator gap */
+  --topbar-h: 64px;      /* header content height, without the status-bar inset */
+  --sat: env(safe-area-inset-top, 0px);
+  --sab: env(safe-area-inset-bottom, 0px);
+  --tab-pad: max(6px, calc(var(--sab) - 12px)); /* iPhone inset is 34px; ~22px clears the home indicator */
   color-scheme: dark;
 }
 
@@ -29,7 +33,7 @@ body {
   color: var(--text);
   font: 15px/1.45 var(--body);
   min-height: 100dvh;
-  padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 16px);
+  padding-bottom: calc(var(--tabbar-h) + var(--tab-pad) + 16px);
   -webkit-tap-highlight-color: transparent;
 }
 [hidden] { display: none !important; }
@@ -40,7 +44,8 @@ code { background: var(--bg-2); padding: 1px 6px; border-radius: 6px; font-size:
 .topbar {
   position: sticky; top: 0; z-index: 10;
   display: flex; align-items: center; justify-content: space-between;
-  padding: calc(env(safe-area-inset-top) + 12px) 16px 12px;
+  height: calc(var(--sat) + var(--topbar-h));
+  padding: calc(var(--sat) + 10px) 16px 8px;
   background: rgba(11,13,16,.85);
   backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-bottom: 1px solid var(--line);
@@ -50,22 +55,22 @@ code { background: var(--bg-2); padding: 1px 6px; border-radius: 6px; font-size:
 .brandmark svg { width: 22px; height: 22px; fill: var(--volt); }
 
 /* Header logo: Kyle on a dark tile with a lime ring; head and sneakers break out of the tile */
-.logo { --s: 44px; position: relative; width: var(--s); height: calc(var(--s) * 1.06); flex: 0 0 auto; margin: -4px 2px -4px 0; }
+.logo { --s: 44px; position: relative; width: var(--s); height: calc(var(--s) * 1.06); flex: 0 0 auto; margin: 0 2px 0 0; }
 .logo-tile {
   position: absolute; left: 8%; right: 8%; top: 17%; bottom: 9%; border-radius: 22%;
   background: linear-gradient(#1e2614, #0b0d10); border: 1.5px solid var(--volt);
   animation: logo-glow 2.6s ease-in-out infinite;
 }
 .logo img {
-  position: absolute; left: 50%; top: 0; height: 96%; width: auto; transform: translateX(-50%);
-  transform-origin: 50% 95%; animation: logo-bounce 2.6s ease-in-out infinite;
-  filter: drop-shadow(0 1px 1px rgba(0,0,0,.55));
+  /* Pre-sized 3x image, centred with left/margin instead of a % transform, and a translate-only bounce,
+     so the browser never resamples it mid-animation (that is what made it look soft). */
+  position: absolute; left: 50%; top: 0; height: 45px; width: 24px; margin-left: -12px;
+  animation: logo-bounce 2.6s ease-in-out infinite;
 }
 @keyframes logo-glow { 0%, 100% { box-shadow: 0 0 2px rgba(212,255,58,.35); } 50% { box-shadow: 0 0 7px rgba(212,255,58,.8); } }
 @keyframes logo-bounce {
-  0%, 100% { transform: translateX(-50%) translateY(0); }
-  40% { transform: translateX(-50%) translateY(-3.5%) scale(1.015); }
-  55% { transform: translateX(-50%) translateY(0) scale(1, .985); }
+  0%, 55%, 100% { transform: translate3d(0, 0, 0); }
+  35% { transform: translate3d(0, -2px, 0); }
 }
 .topbar-stat { font: 600 14px/1 var(--display); letter-spacing: .08em; color: var(--muted); text-transform: uppercase; }
 
@@ -220,7 +225,7 @@ input[type=range] { width: 100%; accent-color: var(--volt); height: 32px; }
 .tabbar {
   position: fixed; left: 0; right: 0; bottom: 0; z-index: 20;
   display: grid; grid-template-columns: repeat(3, 1fr);
-  height: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); padding-bottom: env(safe-area-inset-bottom);
+  height: calc(var(--tabbar-h) + var(--tab-pad)); padding-bottom: var(--tab-pad);
   background: rgba(11,13,16,.92); backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px);
   border-top: 1px solid var(--line);
 }
@@ -235,7 +240,7 @@ input[type=range] { width: 100%; accent-color: var(--volt); height: 32px; }
 
 .toast {
   position: fixed; left: 50%; transform: translateX(-50%);
-  bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom) + 12px); z-index: 30;
+  bottom: calc(var(--tabbar-h) + var(--tab-pad) + 12px); z-index: 30;
   background: var(--volt); color: var(--volt-ink); padding: 10px 16px; border-radius: 10px;
   font: 800 16px/1.2 var(--display); text-transform: uppercase; letter-spacing: .06em;
   max-width: calc(100% - 32px); text-align: center;
@@ -306,32 +311,105 @@ button.btn-ghost:disabled { opacity: .5; cursor: wait; }
 .flavor-actions .flavor-edit { grid-column: auto; padding: 4px 0; }
 .likers { color: var(--muted); font-size: 12px; }
 
-/* Pick page fits one screen */
-[data-page="pick"] .page-head { padding: 14px 0 10px; }
-[data-page="pick"] h1 { font-size: 34px; }
-[data-page="pick"] .chips { gap: 6px; margin-bottom: 12px; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
-[data-page="pick"] .chip { flex: 0 0 auto; padding: 8px 12px; }
-[data-page="pick"] .reel-window { --row: 64px; }
-[data-page="pick"] .reel-marker { height: 64px; }
-[data-page="pick"] .reel-item b { font-size: 24px; }
-[data-page="pick"] .reel-wrap { margin-bottom: 12px; }
-[data-page="pick"] .btn-spin { margin-bottom: 10px; min-height: 50px; }
-[data-page="pick"] .pick-result { min-height: 0; }
-[data-page="pick"] .pick-result .winner { font-size: 28px; margin: 6px 0 2px; }
-[data-page="pick"] .pick-result .winner span { font-size: 17px; }
-[data-page="pick"] .pick-empty { color: var(--muted); font-size: 14px; }
-@media (max-height: 720px) {
-  [data-page="pick"] .sub { display: none; }
-  [data-page="pick"] .reel-window { --row: 56px; }
-  [data-page="pick"] .reel-marker { height: 56px; }
-  [data-page="pick"] .reel-item b { font-size: 21px; }
+/* Pick page: sized from the real screen height (works in Safari and as a Home Screen app).
+   The page gets exactly the space between the header and the tab bar; the reel rows take what's left. */
+[data-page="pick"] {
+  --avail: calc(100dvh - var(--sat) - var(--topbar-h) - var(--tabbar-h) - var(--tab-pad));
+  --pick-row: clamp(40px, calc((var(--avail) - 300px) / 3), 72px);
+  display: flex; flex-direction: column; height: var(--avail); overflow: hidden;
 }
-body:has([data-page="pick"]:not([hidden])) { padding-bottom: calc(var(--tabbar-h) + env(safe-area-inset-bottom)); }
+[data-page="pick"] .page-head { padding: 12px 0 8px; flex: 0 0 auto; }
+[data-page="pick"] h1 { font-size: 30px; }
+[data-page="pick"] .sub { display: none; }
+[data-page="pick"] .chips { gap: 6px; margin-bottom: 10px; flex: 0 0 auto; flex-wrap: nowrap; overflow-x: auto; scrollbar-width: none; }
+[data-page="pick"] .chips::-webkit-scrollbar { display: none; }
+[data-page="pick"] .chip { flex: 0 0 auto; padding: 8px 12px; min-height: 38px; }
+[data-page="pick"] .reel-wrap { margin-bottom: 10px; flex: 0 0 auto; }
+[data-page="pick"] .reel-window { --row: var(--pick-row); }
+[data-page="pick"] .reel-marker { height: var(--pick-row); }
+[data-page="pick"] .reel-item { padding: 0 16px; }
+[data-page="pick"] .reel-item b { font-size: clamp(18px, calc(var(--pick-row) * .36), 26px); }
+[data-page="pick"] .reel-item small { font-size: 12px; }
+[data-page="pick"] .btn-spin { margin-bottom: 10px; min-height: 50px; flex: 0 0 auto; }
+[data-page="pick"] .pick-result { min-height: 0; flex: 1 1 auto; overflow: hidden; }
+[data-page="pick"] .pick-result .winner { font-size: 26px; margin: 6px 0 2px; }
+[data-page="pick"] .pick-result .winner span { font-size: 16px; }
+body:has([data-page="pick"]:not([hidden])) { padding-bottom: calc(var(--tabbar-h) + var(--tab-pad)); }
+
+/* ---- Rate page: compact so the whole form fits one phone screen ---- */
+[data-page="rate"] .page-head { padding: 14px 0 10px; }
+[data-page="rate"] h1 { font-size: 30px; }
+[data-page="rate"] .sub { display: none; }
+[data-page="rate"]:has(.edit-banner:not([hidden])) .page-head { display: none; }
+[data-page="rate"] .edit-banner { margin: 10px 0 8px; padding: 8px 12px; }
+[data-page="rate"] .card { padding: 12px; margin-bottom: 0; }
+[data-page="rate"] .form { gap: 10px; }
+[data-page="rate"] .field { gap: 5px; }
+[data-page="rate"] .field > span, [data-page="rate"] .field > label > span { font-size: 12px; }
+[data-page="rate"] .field input:not(.score-big) { min-height: 42px; padding: 9px 12px; }
+[data-page="rate"] .hint:empty, [data-page="rate"] .form-msg:empty { display: none; }
+[data-page="rate"] .hint { min-height: 0; font-size: 12.5px; }
+[data-page="rate"] .form-msg { min-height: 0; }
+/* brand chips: one swipeable row instead of wrapping onto more lines as brands get added */
+[data-page="rate"] .brand-chips {
+  flex-wrap: nowrap; overflow-x: auto; margin: 2px -12px 0; padding: 0 12px; scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+[data-page="rate"] .brand-chips::-webkit-scrollbar { display: none; }
+[data-page="rate"] .brand-chips .chip { flex: 0 0 auto; min-height: 34px; padding: 5px 12px; }
+/* caffeine and rating side by side */
+.rate-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1.15fr); gap: 12px; align-items: end; }
+.rate-row .score-dial { min-height: 42px; align-items: baseline; gap: 6px; }
+.rate-row .field input.score-big { font-size: 40px; line-height: 40px; height: 42px; width: 3.3ch; padding: 0 2px; border-bottom-width: 2px; }
+.rate-row .score-max { font-size: 18px; }
+/* −.1  slider  +.1 on one line */
+.score-slide { display: grid; grid-template-columns: 44px 1fr 44px; gap: 10px; align-items: center; }
+.score-slide button {
+  background: var(--bg-2); border: 1px solid var(--line); border-radius: 10px; min-height: 38px;
+  font: 800 17px/1 var(--display); color: var(--text); cursor: pointer;
+}
+.score-slide button:active { background: var(--line); }
+.score-slide input[type=range] { height: 30px; }
+[data-page="rate"] .btn-primary { min-height: 48px; font-size: 20px; }
+/* short screens (iPhone SE): the mg box is already prefilled, so skip the "logged so far" line,
+   and let an error hint take the title's place */
+@media (max-height: 700px) {
+  [data-page="rate"] [data-el="caffeine-hint"] { display: none; }
+  [data-page="rate"]:has(.hint.is-error) .page-head { display: none; }
+  [data-page="rate"] .edit-banner { margin: 8px 0 6px; }
+}
+/* very short screens (iPhone SE in Safari): drop the page title, the tab and header already say where you are */
 @media (max-height: 600px) {
-  [data-page="pick"] .page-head { padding: 10px 0 8px; }
-  [data-page="pick"] h1 { font-size: 28px; }
-  [data-page="pick"] .reel-window { --row: 50px; }
-  [data-page="pick"] .reel-marker { height: 50px; }
-  [data-page="pick"] .reel-item b { font-size: 19px; }
-  [data-page="pick"] .pick-result .winner { font-size: 24px; }
+  [data-page="rate"] .page-head { display: none; }
+  [data-page="rate"] .card { margin-top: 8px; }
+  [data-page="rate"] .card { padding: 10px 12px; }
+  [data-page="rate"] .form { gap: 6px; }
+  [data-page="rate"] .brand-chips .chip { min-height: 32px; }
+  [data-page="rate"] .field input:not(.score-big) { min-height: 40px; padding: 8px 12px; }
+  [data-page="rate"] .field.notes > span { display: none; }
+  [data-page="rate"] .btn-primary { min-height: 44px; }
+  [data-page="rate"] .edit-banner { margin: 8px 0 6px; padding: 6px 12px; font-size: 14px; }
+  [data-page="rate"] .edit-banner + .card { margin-top: 0; }
 }
+body:has([data-page="rate"]:not([hidden])) { padding-bottom: calc(var(--tabbar-h) + var(--tab-pad)); }
+
+/* ---- First-open intro (js/intro.js) ---- */
+.intro { position: fixed; inset: 0; z-index: 100; touch-action: none; cursor: pointer; }
+.intro-bg { position: absolute; inset: 0; background: radial-gradient(120% 70% at 50% 42%, #1a2310 0%, var(--bg, #0b0d10) 60%); }
+.intro-stage { position: absolute; left: 0; top: 0; transform-origin: 0 0; will-change: transform; }
+.intro-tile {
+  position: absolute; left: 8%; right: 8%; top: 17%; bottom: 9%; border-radius: 22%;
+  background: linear-gradient(#1e2614, #0b0d10); border: var(--ring, 2px) solid var(--volt);
+}
+.intro svg { position: absolute; overflow: visible; }
+.intro-word {
+  position: absolute; left: 0; right: 0; text-align: center; opacity: 0;
+  font: 800 46px/1 var(--display); letter-spacing: .04em; color: var(--text);
+}
+.intro-word b { color: var(--volt); }
+.intro-skip {
+  position: absolute; left: 0; right: 0; bottom: calc(var(--sab) + 18px); text-align: center;
+  font: 600 12px/1 var(--display); letter-spacing: .16em; text-transform: uppercase; color: var(--muted);
+}
+.intro-playing .topbar .logo { visibility: hidden; }
+.sheet-replay { justify-self: start; }

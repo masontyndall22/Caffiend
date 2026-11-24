@@ -101,3 +101,26 @@ trying the UI before the backend exists. Notifications are hidden in preview mod
   "New rating: Ghost / Swedish Fish scored 8.6/10". Edits send "Rating updated".
 - Phones that uninstall or turn off notifications are removed automatically (push service answers 404/410).
 - Bump `VERSION` in `sw.js` whenever you change front-end files so installed apps pick it up.
+
+## Settings, likes and caffeine
+
+- **Settings** (your name, crew PIN, notifications) open from the bell button in the top right.
+- **Crew PIN** can be letters and/or numbers and is case-sensitive. To change it:
+  `cd worker && npx wrangler secret put CREW_PIN`, type the new PIN, then enter it on each phone in Settings.
+  No redeploy needed.
+- **Likes**: each person types their name once in Settings. Tapping ♥ on a flavor likes it as that name;
+  the Lineup shows who liked what, and the picker's *♥ My likes* chip spins only your likes. No PIN is
+  needed to like. There are no accounts, so anyone with the app can type any name; fine for a group of friends.
+- **Caffeine**: optional mg per can on the Rate form. Picking a brand prefills its most common logged value.
+  Brand cards show the typical value, or the range when flavors differ ("200–300 mg"). Computed in `derive.js`.
+
+### Upgrading an existing database (one time)
+
+```
+cd worker
+npx wrangler d1 execute kyle-energy --remote --file=migrations/0002_caffeine_and_likes.sql
+npx wrangler deploy
+```
+
+The migration only adds a `caffeine_mg` column and a `likes` table; every rating stays. Running it twice
+just fails with "duplicate column name" and changes nothing.
