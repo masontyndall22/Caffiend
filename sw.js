@@ -1,6 +1,6 @@
 // Service worker: cache-first app shell, network-first data.json, and web push display.
 // Bump VERSION whenever a shell file changes so installed apps pick up the update.
-const VERSION = 'ke-v4';
+const VERSION = 'ke-v5';
 const SHELL = [
   './', 'index.html', 'styles.css', 'manifest.json',
   'js/app.js', 'js/config.js', 'js/dom.js', 'js/format.js', 'js/derive.js',
