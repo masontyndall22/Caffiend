@@ -2,10 +2,10 @@
 
 // Cloudflare Worker URL, e.g. 'https://kyle-energy-api.<you>.workers.dev'. Leave '' for preview mode,
 // where the app reads data.json and saves only on this device.
-export const API_BASE = '';
+export const API_BASE = 'https://kyle-energy-api.caffiend.workers.dev';
 
 // VAPID public key from worker/gen-vapid.mjs. Public by design; the private half lives only in the Worker.
-export const VAPID_PUBLIC_KEY = '';
+export const VAPID_PUBLIC_KEY = 'BE0Ubgyb2uZhCT-7g7j3TY4VOPwwsl_gpZfzHi3cNJ1pUVEgYpXvfjq03u4NhBbbxqO98HDq9QVofOsY5Z7OJpo';
 
 // Sample data used in preview mode only.
 export const DATA_URL = 'data.json';
