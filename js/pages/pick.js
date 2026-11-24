@@ -1,12 +1,14 @@
 // Random picker: a slot-machine reel that decelerates onto a random can.
 import { $, $$, h, clear } from '../dom.js';
-import { get, subscribe } from '../state.js';
+import { get, subscribe, likedByMe } from '../state.js';
 import { fmtScore } from '../format.js';
 
-let minScore = 0;
+let filter = '0'; // '0' | '7' | '8.5' | 'liked'
 let spinning = false;
 
-const pool = () => get().ratings.filter((r) => r.rating >= minScore);
+const pool = () => (filter === 'liked'
+  ? get().ratings.filter(likedByMe)
+  : get().ratings.filter((r) => r.rating >= parseFloat(filter)));
 const rand = (xs) => xs[Math.floor(Math.random() * xs.length)];
 const rowH = () => $('reel').firstElementChild?.offsetHeight || 76;
 
@@ -23,7 +25,7 @@ function idle() {
   reel.style.transform = 'translateY(0)';
   clear(reel);
   if (!p.length) {
-    reel.append(h('div', { class: 'reel-item' }), h('div', { class: 'reel-item' }, h('small', { text: 'Nothing here' }), h('b', { text: 'Lower the bar' })));
+    reel.append(h('div', { class: 'reel-item' }), h('div', { class: 'reel-item' }, h('small', { text: 'Nothing here' }), h('b', { text: filter === 'liked' ? (get().name ? 'Like some cans first' : 'Add your name first') : 'Lower the bar' })));
     $('spin').disabled = true;
     return;
   }
@@ -75,12 +77,12 @@ function spin() {
 export function initPick() {
   $$('[data-min]', $('pick-filter')).forEach((chip) => chip.addEventListener('click', () => {
     if (spinning) return;
-    minScore = parseFloat(chip.dataset.min);
+    filter = chip.dataset.min;
     $$('[data-min]').forEach((c) => c.classList.toggle('is-on', c === chip));
     $('pick-result').replaceChildren();
     idle();
   }));
   $('spin').addEventListener('click', spin);
-  subscribe((s, patch) => { if ('ratings' in patch) idle(); });
+  subscribe((s, patch) => { if ('ratings' in patch || 'name' in patch) idle(); });
   idle();
 }

@@ -2,8 +2,9 @@
  * Caffiend API: a Cloudflare Worker with a D1 (SQLite) database. No dependencies.
  *
  *   GET  /api/ratings                 all ratings
- *   POST /api/ratings                 add one        {pin, brand, flavor, rating, note, date?, endpoint?}
+ *   POST /api/ratings                 add one        {pin, brand, flavor, rating, note, caffeine?, date?, endpoint?}
  *   PUT  /api/ratings/:id             edit one       {pin, brand, flavor, rating, note, endpoint?}
+ *   POST /api/ratings/:id/like        like / unlike  {name, liked}   (no PIN: likes are low-stakes)
  *   POST /api/push/subscribe          save a device  {subscription}
  *   POST /api/push/unsubscribe        forget a device {endpoint}
  *   POST /api/push/test               push to one device {pin, endpoint}
@@ -13,7 +14,7 @@
  * Stores raw ratings only; averages and sorting stay in the front end (js/derive.js).
  */
 
-const MAX = { brand: 40, flavor: 60, note: 140 };
+const MAX = { brand: 40, flavor: 60, note: 140, name: 24 };
 
 export default {
   async fetch(request, env, ctx) {
@@ -52,6 +53,25 @@ async function route(request, env, ctx) {
     const saved = await editRating(env, Number(edit[1]), clean(body));
     ctx.waitUntil(notifyAll(env, saved, false, body.endpoint));
     return json({ ok: true, saved, ...(await snapshot(env)) });
+  }
+
+  const like = path.match(/^\/api\/ratings\/(\d+)\/like$/);
+  if (m === 'POST' && like) {
+    const body = await readBody(request);
+    const name = norm(body.name).slice(0, MAX.name);
+    if (!name) fail(400, 'Add your name first.');
+    const id = Number(like[1]);
+    const exists = await env.DB.prepare('SELECT id FROM ratings WHERE id = ?').bind(id).first();
+    if (!exists) fail(404, 'That rating no longer exists. Refresh and try again.');
+    if (body.liked) {
+      await env.DB.prepare(
+        `INSERT INTO likes (rating_id, liker, liker_key, created_at) VALUES (?, ?, ?, ?)
+         ON CONFLICT(rating_id, liker_key) DO NOTHING`,
+      ).bind(id, name, keyOf(name), new Date().toISOString()).run();
+    } else {
+      await env.DB.prepare('DELETE FROM likes WHERE rating_id = ? AND liker_key = ?').bind(id, keyOf(name)).run();
+    }
+    return json({ ok: true, ...(await snapshot(env)) });
   }
 
   if (m === 'POST' && path === '/api/push/subscribe') {
@@ -96,7 +116,12 @@ function clean(body) {
   if (!brand || !flavor) fail(400, 'Brand and flavor are required.');
   if (!Number.isFinite(n) || n < 0 || n > 10) fail(400, 'Rating must be 0.0 to 10.0.');
   const date = /^\d{4}-\d{2}-\d{2}$/.test(body.date || '') ? body.date : new Date().toISOString().slice(0, 10);
-  return { brand, flavor, note, score10: Math.round(n * 10), date };
+  let caffeine = null; // mg per can, optional
+  if (body.caffeine !== undefined && body.caffeine !== null && String(body.caffeine).trim() !== '') {
+    caffeine = Math.round(Number(body.caffeine));
+    if (!Number.isFinite(caffeine) || caffeine < 0 || caffeine > 1000) fail(400, 'Caffeine must be 0 to 1000 mg.');
+  }
+  return { brand, flavor, note, score10: Math.round(n * 10), date, caffeine };
 }
 
 // Reuse the existing spelling when the brand already exists ("ghost" -> "Ghost").
@@ -122,9 +147,9 @@ async function addRating(env, r) {
   const now = new Date().toISOString();
   try {
     const row = await env.DB.prepare(
-      `INSERT INTO ratings (brand, flavor, brand_key, flavor_key, score10, rated_on, note, updated_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
-    ).bind(brand, r.flavor, keyOf(brand), keyOf(r.flavor), r.score10, r.date, r.note, now).first();
+      `INSERT INTO ratings (brand, flavor, brand_key, flavor_key, score10, rated_on, note, updated_at, caffeine_mg)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?) RETURNING *`,
+    ).bind(brand, r.flavor, keyOf(brand), keyOf(r.flavor), r.score10, r.date, r.note, now, r.caffeine).first();
     return toApi(row);
   } catch (err) {
     // Two phones saving the same flavor at once: the UNIQUE index catches the second.
@@ -140,20 +165,26 @@ async function editRating(env, id, r) {
   const dup = await duplicate(env, brand, r.flavor, id);
   if (dup) dupError(dup);
   const row = await env.DB.prepare(
-    `UPDATE ratings SET brand = ?, flavor = ?, brand_key = ?, flavor_key = ?, score10 = ?, note = ?, updated_at = ?
+    `UPDATE ratings SET brand = ?, flavor = ?, brand_key = ?, flavor_key = ?, score10 = ?, note = ?, caffeine_mg = ?, updated_at = ?
      WHERE id = ? RETURNING *`,
-  ).bind(brand, r.flavor, keyOf(brand), keyOf(r.flavor), r.score10, r.note, new Date().toISOString(), id).first();
+  ).bind(brand, r.flavor, keyOf(brand), keyOf(r.flavor), r.score10, r.note, r.caffeine, new Date().toISOString(), id).first();
   return toApi(row); // rated_on is kept from the first rating
 }
 
-const toApi = (row) => ({
+const toApi = (row, likes = []) => ({
   id: row.id, brand: row.brand, flavor: row.flavor, rating: row.score10 / 10, date: row.rated_on, note: row.note,
+  caffeine: row.caffeine_mg ?? null, likes,
 });
 
 async function snapshot(env) {
-  const { results } = await env.DB.prepare('SELECT * FROM ratings ORDER BY brand_key, flavor_key').all();
+  const [{ results }, { results: likeRows }] = await env.DB.batch([
+    env.DB.prepare('SELECT * FROM ratings ORDER BY brand_key, flavor_key'),
+    env.DB.prepare('SELECT rating_id, liker FROM likes ORDER BY created_at'),
+  ]);
+  const likes = new Map();
+  for (const l of likeRows) likes.set(l.rating_id, [...(likes.get(l.rating_id) || []), l.liker]);
   const updated = results.reduce((m, r) => (r.updated_at > m ? r.updated_at : m), '') || null;
-  return { updated, ratings: results.map(toApi) };
+  return { updated, ratings: results.map((r) => toApi(r, likes.get(r.id) || [])) };
 }
 
 // ---------- Push fan-out ----------
@@ -163,7 +194,7 @@ async function notifyAll(env, saved, isNew, skipEndpoint) {
   const { results } = await env.DB.prepare('SELECT * FROM push_subs').all();
   const msg = {
     title: isNew ? `New rating: ${saved.brand}` : `Rating updated: ${saved.brand}`,
-    body: `${saved.flavor} scored ${saved.rating.toFixed(1)}/10${saved.note ? ` · “${saved.note}”` : ''}`,
+    body: `${saved.flavor} scored ${saved.rating.toFixed(1)}/10${Number.isFinite(saved.caffeine) ? ` · ${saved.caffeine} mg` : ''}${saved.note ? ` · “${saved.note}”` : ''}`,
     url: './#lineup',
     tag: `rating-${saved.id}`,
   };

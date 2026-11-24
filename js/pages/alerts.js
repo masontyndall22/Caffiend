@@ -1,7 +1,7 @@
 // Notification controls: the bell in the top bar, the one-time banner on the Lineup, and Settings.
 import { $, toast } from '../dom.js';
 import { get, subscribe, refreshPush, enablePush, disablePush, testPush } from '../state.js';
-import { showPinField } from './rate.js';
+import { showPinField } from './settings.js';
 
 const DISMISS_KEY = 'ke.alertBannerDismissed';
 const dismissed = () => { try { return localStorage.getItem(DISMISS_KEY) === '1'; } catch { return false; } };
@@ -43,9 +43,8 @@ function render() {
   const canToggle = status === 'on' || status === 'off';
 
   const bell = $('bell');
-  bell.hidden = status === 'checking' || status === 'unsupported' || status === 'not-configured';
   bell.classList.toggle('is-on', status === 'on');
-  bell.setAttribute('aria-label', status === 'on' ? 'Notifications on' : 'Turn on notifications');
+  bell.setAttribute('aria-label', status === 'on' ? 'Settings (notifications on)' : 'Settings and notifications');
 
   $('push-status').textContent = STATUS_TEXT[status] || '';
   const toggle = $('push-toggle');
@@ -65,7 +64,6 @@ function render() {
 }
 
 export function initAlerts() {
-  $('bell').addEventListener('click', onToggle);
   $('push-toggle').addEventListener('click', onToggle);
   $('push-test').addEventListener('click', async () => {
     try { await testPush(); toast('Test sent. It should arrive in a few seconds.'); } catch (e) {

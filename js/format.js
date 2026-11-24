@@ -17,3 +17,11 @@ export function fmtDate(iso) {
 }
 
 export const plural = (n, one, many = one + 's') => `${n} ${n === 1 ? one : many}`;
+
+export const fmtMg = (n) => (Number.isFinite(n) ? `${n} mg` : '');
+
+// Brand caffeine label: "200 mg", or "160–300 mg" when flavors differ.
+export function fmtBrandMg(c) {
+  if (!c) return '';
+  return c.min === c.max ? `${c.typical} mg` : `${c.min}–${c.max} mg`;
+}

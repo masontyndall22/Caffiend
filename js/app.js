@@ -5,6 +5,7 @@ import { initLineup } from './pages/lineup.js';
 import { initRate } from './pages/rate.js';
 import { initPick } from './pages/pick.js';
 import { initAlerts } from './pages/alerts.js';
+import { initSettings } from './pages/settings.js';
 
 if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('sw.js').catch(() => {});
@@ -13,6 +14,7 @@ if ('serviceWorker' in navigator) {
 initLineup();
 initRate();
 initPick();
+initSettings();
 initAlerts();
 initNav();
 load();

@@ -1,16 +1,17 @@
 // The only module that writes state. Pages read via get() and react via subscribe().
 import * as api from './api.js';
 import * as push from './push.js';
-import { key, findRating, replaceRating } from './derive.js';
- 
+import { key, findRating, replaceRating, norm } from './derive.js';
+
 const PIN_KEY = 'ke.pin';
+const NAME_KEY = 'ke.name';                // display name used for likes
 const CACHE_KEY = 'ke.cache';             // last ratings from the API, for offline starts
 const PREVIEW_KEY = 'ke.previewRatings';  // preview mode only (no API_BASE)
- 
+
 const store = (k, v) => { try { v == null ? localStorage.removeItem(k) : localStorage.setItem(k, v); } catch {} };
 const read = (k) => { try { return localStorage.getItem(k); } catch { return null; } };
 const readJson = (k) => { try { return JSON.parse(read(k) || 'null'); } catch { return null; } };
- 
+
 let state = {
   ratings: [],
   updated: null,
@@ -18,31 +19,33 @@ let state = {
   error: null,
   route: 'lineup',
   pin: read(PIN_KEY) || '',
+  name: read(NAME_KEY) || '',
+  settingsOpen: false,
   editing: null, // rating open in the Rate form ({id?, brand, flavor, rating, date, note}), or null
   push: { status: 'checking', endpoint: null, busy: false }, // status: on | off | denied | needs-install | unsupported | not-configured
 };
 const subs = new Set();
- 
+
 export const get = () => state;
 export function subscribe(fn) { subs.add(fn); return () => subs.delete(fn); }
 function set(patch) {
   state = { ...state, ...patch };
   subs.forEach((fn) => fn(state, patch));
 }
- 
+
 const localDate = () => {
   const d = new Date();
   return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
 };
- 
+
 // ---------- Ratings ----------
- 
+
 function applyRatings(snap) {
   const ratings = Array.isArray(snap?.ratings) ? snap.ratings : [];
   set({ ratings, updated: snap?.updated || null, loading: false, error: null });
   if (api.hasApi()) store(CACHE_KEY, JSON.stringify({ ratings, updated: snap?.updated || null }));
 }
- 
+
 export async function load() {
   if (!state.ratings.length) {
     const cached = api.hasApi() ? readJson(CACHE_KEY) : null;
@@ -59,48 +62,80 @@ export async function load() {
     set({ loading: false, error: e.message });
   }
 }
- 
+
 export function setRoute(route) { if (route !== state.route) set({ route }); }
- 
+
 export function setPin(pin) {
   store(PIN_KEY, pin || null);
   set({ pin });
 }
- 
+
+export function setName(name) {
+  const n = norm(name).slice(0, 24);
+  store(NAME_KEY, n || null);
+  set({ name: n });
+}
+
+export function openSettings() { set({ settingsOpen: true }); }
+export function closeSettings() { if (state.settingsOpen) set({ settingsOpen: false }); }
+
+// ---------- Likes (by display name, no accounts) ----------
+
+export const likedByMe = (r) => Boolean(state.name) && (r.likes || []).some((n) => n.toLowerCase() === state.name.toLowerCase());
+
+export async function toggleLike(r) {
+  if (!state.name) throw Object.assign(new Error('Add your name first so your likes are yours.'), { needsName: true });
+  const liked = !likedByMe(r);
+  const me = state.name;
+  const k = key(r.brand, r.flavor);
+  const nextLikes = liked ? [...(r.likes || []), me] : (r.likes || []).filter((n) => n.toLowerCase() !== me.toLowerCase());
+  const before = state.ratings;
+  const ratings = state.ratings.map((x) => (key(x.brand, x.flavor) === k ? { ...x, likes: nextLikes } : x));
+  set({ ratings }); // optimistic
+  if (!api.hasApi()) { store(PREVIEW_KEY, JSON.stringify(ratings)); return liked; }
+  try {
+    applyRatings(await api.setLike(r.id, me, liked));
+  } catch (e) {
+    set({ ratings: before });
+    throw e;
+  }
+  return liked;
+}
+
 export function startEdit(brand, flavor) {
   const hit = findRating(state.ratings, brand, flavor);
   if (hit) set({ editing: { ...hit } });
 }
 export function cancelEdit() { if (state.editing) set({ editing: null }); }
- 
+
 // entry: {brand, flavor, rating, note}, already cleaned by the form. Throws with a readable message.
 export async function saveRating(entry) {
   const original = state.editing;
   const full = { ...entry, date: original?.date || localDate() };
- 
+
   // Duplicate guard (the form and the database check too).
   const clash = findRating(state.ratings, full.brand, full.flavor);
   if (clash && (!original || key(clash.brand, clash.flavor) !== key(original.brand, original.flavor))) {
     throw new Error(`${clash.brand} ${clash.flavor} is already rated ${clash.rating.toFixed(1)}.`);
   }
- 
+
   if (!api.hasApi()) {
-    const ratings = original ? replaceRating(state.ratings, original, full) : [...state.ratings, full];
+    const ratings = original ? replaceRating(state.ratings, original, { ...full, likes: original.likes || [] }) : [...state.ratings, { ...full, likes: [] }];
     store(PREVIEW_KEY, JSON.stringify(ratings));
     set({ ratings, editing: null });
     return { preview: true, edited: Boolean(original) };
   }
-  if (!state.pin) throw Object.assign(new Error('Enter the crew PIN first. It’s in “Settings & notifications” at the bottom of the Rate tab.'), { needsPin: true });
+  if (!state.pin) throw Object.assign(new Error('Enter the crew PIN first: tap the bell in the top right.'), { needsPin: true });
   const res = await api.saveRating(full, state.pin, original, state.push.endpoint);
   applyRatings(res);
   set({ editing: null });
   return { preview: false, edited: Boolean(original) };
 }
- 
+
 // ---------- Push notifications ----------
- 
+
 function setPush(patch) { set({ push: { ...state.push, ...patch } }); }
- 
+
 export async function refreshPush() {
   const s = push.support();
   if (s !== 'ok' || !api.hasApi()) {
@@ -112,7 +147,7 @@ export async function refreshPush() {
   setPush({ status: sub ? 'on' : 'off', endpoint: sub?.endpoint || null });
   if (sub) api.pushSubscribe(sub.toJSON()).catch(() => {}); // re-register in case the server forgot it
 }
- 
+
 export async function enablePush() {
   setPush({ busy: true });
   try {
@@ -126,7 +161,7 @@ export async function enablePush() {
     setPush({ busy: false });
   }
 }
- 
+
 export async function disablePush() {
   setPush({ busy: true });
   try {
@@ -137,10 +172,9 @@ export async function disablePush() {
     setPush({ busy: false });
   }
 }
- 
+
 export async function testPush() {
-  if (!state.pin) throw Object.assign(new Error('Enter the crew PIN first. It’s in “Settings & notifications” at the bottom of the Rate tab.'), { needsPin: true });
+  if (!state.pin) throw Object.assign(new Error('Enter the crew PIN first: tap the bell in the top right.'), { needsPin: true });
   if (!state.push.endpoint) throw new Error('Turn on alerts first.');
   await api.pushTest(state.pin, state.push.endpoint);
 }
- 

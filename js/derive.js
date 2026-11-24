@@ -30,6 +30,7 @@ export function groupByBrand(ratings, { sort = 'score', query = '' } = {}) {
       flavors: sortFlavors(flavors, sort),
       avg: avg(b.flavors.map((f) => f.rating)),
       count: b.flavors.length,
+      caffeine: brandCaffeine(b.flavors),
       best: Math.max(...b.flavors.map((f) => f.rating)),
       latest: b.flavors.reduce((m, f) => (f.date > m ? f.date : m), ''),
     };
@@ -99,4 +100,29 @@ export function parseTypedScore(text) {
 export function replaceRating(ratings, original, entry) {
   const k = key(original.brand, original.flavor);
   return ratings.map((r) => (key(r.brand, r.flavor) === k ? entry : r));
+}
+
+// Caffeine (mg per can). Each flavor may carry its own value; a brand shows its typical value.
+// Returns {typical, min, max, count} or null when no flavor of the brand has a value.
+export function brandCaffeine(flavors) {
+  const vals = flavors.map((f) => f.caffeine).filter((v) => Number.isFinite(v));
+  if (!vals.length) return null;
+  const freq = new Map();
+  vals.forEach((v) => freq.set(v, (freq.get(v) || 0) + 1));
+  const typical = [...freq.entries()].sort((a, b) => b[1] - a[1] || b[0] - a[0])[0][0];
+  return { typical, min: Math.min(...vals), max: Math.max(...vals), count: vals.length };
+}
+
+// Typical caffeine for a brand name across all ratings (used to prefill the Rate form).
+export function typicalCaffeineFor(ratings, brand) {
+  const b = norm(brand).toLowerCase();
+  return brandCaffeine(ratings.filter((r) => norm(r.brand).toLowerCase() === b));
+}
+
+// "" or junk -> null; otherwise a whole number of mg, 0–1000.
+export function cleanCaffeine(v) {
+  const t = String(v ?? '').trim();
+  if (!t) return null;
+  const n = Math.round(Number(t));
+  return Number.isFinite(n) && n >= 0 && n <= 1000 ? n : NaN;
 }

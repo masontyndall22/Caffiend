@@ -36,6 +36,8 @@ export function saveRating(entry, pin, original, endpoint) {
   return original ? call('PUT', `/api/ratings/${original.id}`, body) : call('POST', '/api/ratings', body);
 }
 
+export const setLike = (id, name, liked) => call('POST', `/api/ratings/${id}/like`, { name, liked });
+
 export const pushSubscribe = (subscription) => call('POST', '/api/push/subscribe', { subscription });
 export const pushUnsubscribe = (endpoint) => call('POST', '/api/push/unsubscribe', { endpoint });
 export const pushTest = (pin, endpoint) => call('POST', '/api/push/test', { pin, endpoint });
